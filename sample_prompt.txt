@@ -1,0 +1,50 @@
+[GLOBAL STYLE]
+A monochrome pencil sketch in the style of a newspaper editorial cartoon, drawn by an amateur artist. 
+The drawing has rough graphite lines, light cross-hatching, minimal detail, and no color. 
+Each panel is separated by clean white gutters and thin black frames. 
+The characters have simple, naive proportions, like a stick-figure with expressive faces. 
+White background, high contrast pencil texture, no digital effects, no color. 
+Captions appear under each panel. 
+Overall tone: lighthearted, slice-of-life, minimalist.
+
+[LAYOUT]
+A 4-panel comic strip arranged in a 2x2 grid.
+Top-left: Panel 1, top-right: Panel 2, bottom-left: Panel 3, bottom-right: Panel 4.
+Each panel has equal size, clear white space between them, and visible frame lines.
+
+[PANEL 1 - Morning rush]
+Main character: a young office worker in her 20s, short hair, wearing glasses and a backpack.
+Setting: inside the house entrance, window showing rain outside.
+Action: she hurriedly grabs her umbrella while putting on her shoes.
+Mood/Expression: slight hurry, a bit anxious.
+Key props: foldable umbrella, shoes by the door.
+Caption (under the panel): "It's raining, better take my umbrella!"
+
+[PANEL 2 - Waiting for the bus]
+Main character: same person.
+Setting: rainy bus stop, puddles on the ground.
+Action: she stands avoiding puddles with her toes.
+Mood/Expression: slight frown, mild annoyance.
+Key props: wet sneakers, raindrops, bus stop pole.
+Caption: "My shoes are getting wet..."
+
+[PANEL 3 - Coffee relief]
+Main character: same person.
+Setting: in front of a café near the office.
+Action: she receives a steaming paper cup of coffee.
+Mood/Expression: relief and soft smile.
+Key props: paper coffee cup with steam rising.
+Caption: "Peace in a sip of coffee"
+
+[PANEL 4 - Calm at work]
+Main character: same person.
+Setting: office desk.
+Action: she dries her umbrella and sits down at her chair.
+Mood/Expression: peaceful, satisfied smile.
+Key props: wet umbrella, computer monitor.
+Caption: "Got wet, but it’s a good start."
+
+[NEGATIVE PROMPT]
+no color, no watercolor, no digital painting, no photorealism, no shading, no 3D render, no anime, 
+no text artifacts, no watermark, no background clutter, no detailed environments, 
+no colored tones, no realistic lighting, no signature, no photographic effects.

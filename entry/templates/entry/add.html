@@ -1,0 +1,130 @@
+{% extends 'entry/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+
+    <!-- 오늘의 일기 (좌측) -->
+    <div class="col-md-5 border p-3">
+      <h5>오늘의 일기</h5>
+      <form id="add-form" method="post" action="">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label class="form-label">제목</label>
+          <input type="text" name="note" class="form-control" placeholder="이 날을 한 줄로" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">내용</label>
+          <textarea name="content" rows="10" class="form-control" placeholder="일기를 입력하세요" required></textarea>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">오늘의 생산성</label>
+          <input type="range" name="productivity" min="0" max="10" value="5" step="1" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">저장 & 카드 제작</button>
+      </form>
+    </div>
+
+    <!-- 진행바 (중앙, 두 박스 사이) -->
+    <div class="col-md-2 d-flex align-items-center justify-content-center">
+      <div id="progress-wrapper" class="w-100" style="display: none;">
+        <div class="text-center mb-2">이미지 생성 중...</div>
+        <div class="progress" style="height: 10px;">
+          <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오늘의 네컷 미리보기 (우측) -->
+    <div class="col-md-5 border p-3">
+      <h5>오늘의 네컷 미리보기</h5>
+      <div class="border mb-3 d-flex justify-content-center align-items-center" style="height: 400px;">
+        <img id="preview-image" src="" alt="미리보기" style="max-width: 100%; max-height: 100%; display: none;" />
+        <span id="preview-placeholder" class="text-muted">네컷</span>
+      </div>
+      <div class="d-flex justify-content-center">
+        <button type="button" class="btn btn-outline-secondary me-2" id="regenerate-btn" disabled>재생성</button>
+        <a id="detail-link" class="btn btn-outline-secondary disabled" href="#" tabindex="-1" aria-disabled="true">저장 확인</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // CSRF 토큰 (AJAX 요청용)
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  const progressWrapper = document.getElementById('progress-wrapper');
+  const progressBar = document.getElementById('progress-bar');
+  const previewImage = document.getElementById('preview-image');
+  const previewPlaceholder = document.getElementById('preview-placeholder');
+  const regenerateBtn = document.getElementById('regenerate-btn');
+  const detailLink = document.getElementById('detail-link');
+
+  // 서버에서 새로 저장된 ID가 내려오면 즉시 이미지 생성 시작
+  const NEW_DIARY_ID = {{ new_diary_id|default:'null' }};
+
+  function animateProgressTo(target) {
+    const current = parseInt(progressBar.style.width || '0');
+    const step = (target - current) / 30; // 부드럽게 30스텝
+    let i = 0;
+    const timer = setInterval(() => {
+      i += 1;
+      const next = Math.min(target, Math.round(current + step * i));
+      progressBar.style.width = next + '%';
+      if (next >= target || i >= 30) clearInterval(timer);
+    }, 50);
+  }
+
+  async function startGeneration(id) {
+    progressWrapper.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.classList.add('progress-bar-animated');
+    animateProgressTo(90); // 서버 대기 중 90%까지 애니메이션
+
+    try {
+      const resp = await fetch(`{% url 'generate_image' 0 %}`.replace('/0/', `/${id}/`), {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+      });
+      const data = await resp.json();
+      if (data.status === 'ok' && data.image_url) {
+        progressBar.classList.remove('progress-bar-animated');
+        animateProgressTo(100);
+        previewPlaceholder.style.display = 'none';
+        previewImage.src = data.image_url;
+        previewImage.style.display = 'block';
+        regenerateBtn.disabled = false;
+        // 상세보기 링크 활성화
+        detailLink.classList.remove('disabled');
+        detailLink.removeAttribute('tabindex');
+        detailLink.removeAttribute('aria-disabled');
+        detailLink.href = `{% url 'detail' 0 %}`.replace('/0', `/${id}`);
+      } else {
+        throw new Error(data.message || '이미지 생성 실패');
+      }
+    } catch (e) {
+      console.error(e);
+      progressWrapper.style.display = 'none';
+      alert('이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  }
+
+  if (NEW_DIARY_ID) {
+    // 페이지가 POST 후 렌더된 경우 자동 실행
+    startGeneration(NEW_DIARY_ID);
+  }
+
+  // 재생성 버튼: 같은 일기 id로 다시 호출
+  regenerateBtn && regenerateBtn.addEventListener('click', () => {
+    if (!NEW_DIARY_ID) return;
+    startGeneration(NEW_DIARY_ID);
+  });
+</script>
+{% endblock %}
+

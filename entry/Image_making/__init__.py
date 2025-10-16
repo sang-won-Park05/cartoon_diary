@@ -1,0 +1,2 @@
+"""Image generation pipeline package."""
+

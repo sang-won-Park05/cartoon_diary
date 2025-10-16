@@ -1,0 +1,16 @@
+{% extends 'entry/base.html' %}
+{% load static %}
+{% block content %}
+    <div class="container">
+        {% if diary.image_url %}
+            <div class="mb-3">
+                <img src="{{ diary.image_url }}" alt="Diary Image" class="img-fluid" />
+            </div>
+        {% endif %}
+        {% autoescape off %}
+            {{ diary.content }}
+        {% endautoescape %}
+    </div>
+
+
+{% endblock %}
