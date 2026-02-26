@@ -9,6 +9,10 @@ Whitenoise로 정적파일 서빙.
 import os
 from pathlib import Path
 import dj_database_url  # 있으면 사용, 없어도 에러 아님(요구사항에 포함 권장)
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 # --------------------------------------------------------------------------------------
 # 기본 경로
@@ -33,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
     'entry.apps.EntryConfig',
 ]
 
@@ -113,16 +118,55 @@ USE_TZ = True
 # --------------------------------------------------------------------------------------
 # 정적/미디어 파일
 # --------------------------------------------------------------------------------------
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'diary' / 'static',
-]
+USE_S3 = os.getenv('USE_S3', 'True') == 'True'
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if USE_S3:
+    # AWS S3 설정
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'ap-northeast-2')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+    # S3 파일 설정
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_DEFAULT_ACL = None  # ACL 비활성화 (버킷에서 ACL을 지원하지 않음)
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    # Media 파일은 S3에 저장 (기본값)
+    DEFAULT_FILE_STORAGE = 'diary.storages.MediaStorage'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+    # 일기 만화 이미지용 (추후 사용)
+    CARTOON_STORAGE = 'diary.storages.CartoonStorage'
+
+    # 프로필 이미지용 (추후 사용)
+    PROFILE_STORAGE = 'diary.storages.ProfileStorage'
+
+    # 사용자 캐릭터 이미지용 (추후 사용)
+    USER_CHARACTER_STORAGE = 'diary.storages.UserCharacterStorage'
+
+    # Static 파일은 Whitenoise로 서빙 (로컬)
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_DIRS = [
+        BASE_DIR / 'diary' / 'static',
+    ]
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    # 로컬 파일 시스템 사용
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_DIRS = [
+        BASE_DIR / 'diary' / 'static',
+    ]
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # --------------------------------------------------------------------------------------
 # 기본 Primary Key 타입 지정 (Django 3.2+ 권장)

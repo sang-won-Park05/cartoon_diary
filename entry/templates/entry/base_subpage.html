@@ -1,0 +1,197 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>{% block title %}일기툰{% endblock %}</title>
+    <style>
+        /* 기본 스타일 (라이트 모드) */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif; 
+            background-color: #f3f4f6; 
+            margin: 0; 
+            color: #1f2937;
+        }
+        .main-body { align-items: flex-start; }
+        
+        /* 서브 페이지용 헤더 */
+        .page-header { width: 100%; background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e5e7eb; }
+        .logo-link { display: block; max-width: 1280px; margin: 0 auto; padding: 0.75rem 1.5rem; font-size: 1.5rem; font-weight: bold; color: #0ea5e9; text-decoration: none; }
+        
+        /* 메인 컨텐츠 */
+        .main-content { width: 100%; padding: 2rem 1rem; }
+        .content-wrapper-center { width: 100%; max-width: 48rem; margin: 0 auto; }
+        
+        /* 내 정보 & 환경설정 공통 스타일 */
+        .profile-section { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid transparent; }
+        .section-title { font-size: 1.875rem; font-weight: bold; margin-bottom: 2rem; color: #1f2937; }
+        .info-group { margin-bottom: 2.5rem; }
+        .info-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .info-group h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+        .info-content .info-row { display: flex; align-items: center; min-height: 40px; margin-bottom: 1rem; }
+        .info-content .info-label { width: 7rem; font-weight: bold; flex-shrink: 0; }
+        .info-content .info-value { color: #374151; }
+        .info-content input { border: none; border-bottom: 2px solid #e5e7eb; padding: 0.25rem; width: 100%; font-size: 1rem; background: transparent; }
+        .info-content input:focus { outline: none; border-bottom-color: #0ea5e9; }
+        .btn-text { font-size: 0.875rem; color: #0ea5e9; background: none; border: none; cursor: pointer; font-weight: 500; }
+        .btn-text:hover { text-decoration: underline; }
+        .verification-box { margin: 1.5rem 0; padding: 1.5rem; background-color: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
+        .verification-box > p { text-align: center; font-weight: 600; margin-top: 0; margin-bottom: 1rem; }
+        .btn-submit { width: 100%; background-color: #0ea5e9; color: white; font-weight: bold; padding: 0.75rem; border: none; border-radius: 0.5rem; cursor: pointer; transition: background-color 0.2s; }
+        .btn-submit:hover { background-color: #0284c7; }
+        .btn-secondary { background-color: #e5e7eb; color: #1f2937; font-weight: 600; padding: 0.5rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
+        .btn-secondary:hover { background-color: #d1d5db; }
+        
+        /* 추가된 스타일 */
+        .profile-image-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; }
+        .profile-image-wrapper { width: 8rem; height: 8rem; border-radius: 9999px; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; overflow: hidden; border: 1px solid #d1d5db; }
+        .profile-image-wrapper i { width: 5rem; height: 5rem; color: #9ca3af; }
+        .profile-image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-buttons { display: flex; gap: 0.5rem; }
+        .progress-bar-area { display: flex; align-items: center; gap: 1rem; }
+        .progress-bar { width: 100%; background-color: #e5e7eb; height: 1rem; border-radius: 9999px; overflow: hidden; }
+        .progress-fill { background-color: #0ea5e9; height: 100%; border-radius: 9999px; transition: width 0.5s ease-in-out; }
+        .danger-zone-title { color: #dc2626; }
+        .btn-danger-text { color: #dc2626; background: none; border: none; cursor: pointer; }
+        .btn-danger-text:hover { text-decoration: underline; }
+        .form-select { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #0ea5e9; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
+
+        /* 다크 모드 스타일 */
+        html.dark body { background-color: #111827; }
+        html.dark .page-header { background-color: #1f2937; border-bottom-color: #374151; }
+        html.dark .logo-link { color: #38bdf8; }
+        html.dark .profile-section { background-color: #374151; color: #d1d5db; border-color: #4b5563; }
+        html.dark .section-title, html.dark .info-group h2 { color: #f9fafb; }
+        html.dark .info-header { border-bottom-color: #4b5563; }
+        html.dark .info-value, html.dark .profile-buttons button { color: #d1d5db; }
+        html.dark .info-content input { border-bottom-color: #4b5563; color: #f9fafb; }
+        html.dark .info-content input:focus { border-bottom-color: #38bdf8; }
+        html.dark .btn-text { color: #38bdf8; }
+        html.dark .verification-box { background-color: #1f2937; border-color: #4b5563; }
+        html.dark .btn-submit { background-color: #0e7490; }
+        html.dark .btn-submit:hover { background-color: #155e75; }
+        html.dark .btn-secondary { background-color: #4b5563; color: #f9fafb; border-color: #4b5563; }
+        html.dark .btn-secondary:hover { background-color: #525c6a; }
+        html.dark .profile-image-wrapper { background-color: #4b5563; border-color: #6b7280; }
+        html.dark .progress-bar { background-color: #4b5563; }
+        html.dark .progress-fill { background-color: #0e7490; }
+        html.dark .form-select { background-color: #4b5563; color: #f9fafb; border-color: #6b7280; }
+        html.dark input:checked + .slider { background-color: #0e7490; }
+
+        
+        /* === [추가] 클래식(주황/노랑) 테마 === */
+        html.classic body { 
+            background-color: #fef3c7; /* body 배경 */
+            color: #374151;
+        }
+        html.classic .page-header {
+            background-color: #fff8db; /* 헤더 배경 (연한 노랑) */
+            border-bottom: 1px solid #facc15;
+        }
+        html.classic .logo-link {
+            color: #f59e0b; /* 로고 색상 (주황) */
+        }
+        html.classic .profile-section {
+            background-color: #ffffff; /* 카드 배경 (흰색) */
+            border: 1px solid #facc15;
+            color: #374151;
+        }
+        html.classic .section-title, html.classic .info-group h2 {
+            color: #1f2937; 
+        }
+        html.classic .info-header {
+            border-bottom-color: #facc15; /* 구분선 */
+        }
+        html.classic .info-content .info-value {
+            color: #374151;
+        }
+        html.classic .info-content input {
+            border-bottom-color: #facc15; /* 인풋 밑줄 */
+            color: #374151;
+            background-color: transparent;
+        }
+        html.classic .info-content input:focus {
+            border-bottom-color: #f59e0b; /* 인풋 포커스 */
+        }
+        html.classic .btn-text {
+            color: #f59e0b; /* 텍스트 버튼 (주황) */
+        }
+        html.classic .verification-box {
+            background-color: #fff8db; /* 연한 노랑 */
+            border-color: #facc15;
+        }
+        html.classic .btn-submit {
+            background-color: #f59e0b; /* 주황 버튼 */
+            border-color: #f59e0b;
+            color: white;
+        }
+        html.classic .btn-submit:hover {
+            background-color: #d97706; /* 주황 버튼 호버 */
+        }
+        html.classic .btn-secondary {
+            background-color: #ffffff; /* 흰색 + 주황 테두리 버튼 */
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+         html.classic .btn-secondary:hover {
+            background-color: #fff8db; /* 연한 노랑 호버 */
+         }
+        html.classic .profile-image-wrapper {
+            background-color: #fff8db;
+            border: 1px solid #facc15;
+        }
+        html.classic .progress-bar {
+            background-color: #fff8db; /* 프로그레스바 배경 */
+        }
+        html.classic .progress-fill {
+            background-color: #f59e0b; /* 프로그레스바 채우기 */
+        }
+        html.classic .form-select {
+            background-color: #ffffff;
+            border-color: #facc15;
+            color: #374151;
+        }
+        html.classic .switch input + .slider {
+             background-color: #facc15; /* 스위치 비활성 (연한 주황) */
+        }
+        html.classic .switch input:checked + .slider {
+            background-color: #f59e0b; /* 스위치 (주황) */
+        }
+
+    </style>
+
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (theme === 'classic') {
+                document.documentElement.classList.add('classic');
+            }
+        })();
+    </script>
+</head>
+<body class="main-body">
+    <header class="page-header">
+        <a href="{% url 'entry' %}" class="logo-link">일기툰</a>
+    </header>
+    <main class="main-content">
+        <div class="content-wrapper-center">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

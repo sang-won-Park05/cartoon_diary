@@ -1,0 +1,157 @@
+{% extends 'entry/base_subpage.html' %}
+
+{% block title %}내 정보{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <h1 class="section-title">내 정보</h1>
+
+    <div class="info-group">
+        <div id="info-header" class="info-header"></div>
+        <div id="info-display-area" class="info-content"></div>
+    </div>
+
+    <div class="info-group">
+        <h2>캘린더 완주율</h2>
+        <div class="progress-bar-area">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+            <span id="progress-percent">0%</span>
+        </div>
+        <p id="progress-detail" style="text-align: right; margin-top: 0.5rem; color: #6b7280;"></p>
+    </div>
+
+    <div class="info-group">
+        <h2 class="danger-zone-title">계정 관리</h2>
+        <button id="withdraw-btn" class="btn-danger-text">회원 탈퇴하기</button>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- 임시 데이터 (실제로는 Django 템플릿 변수로 전달받습니다) ---
+    const userInfo = {
+        email: '{{ user.email|default:"admin@test.com" }}',
+        name: '{{ user.username|default:"관리자" }}',
+        joinDate: '{{ user.date_joined|date:"Y-m-d" }}'
+    };
+    const ADMIN_PASSWORD = '1111'; // 임시 기존 비밀번호
+    const calendarCompletion = { diariesWritten: 15, totalDays: 31 };
+
+    // --- 필요한 HTML 요소들 ---
+    const infoHeader = document.getElementById('info-header');
+    const infoDisplayArea = document.getElementById('info-display-area');
+    const progressFill = document.getElementById('progress-fill');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressDetail = document.getElementById('progress-detail');
+
+    // --- 상태 관리 변수 ---
+    let isEditing = false;
+    let isVerifying = false;
+
+    // --- 정보 표시/수정 영역을 다시 그리는 함수 ---
+    function renderInfoArea() {
+        if (isVerifying) {
+            // 본인 인증 UI
+            infoHeader.innerHTML = `<h2>로그인 정보</h2>`;
+            infoDisplayArea.innerHTML = `
+                <div class="verification-box">
+                    <p>본인 확인을 위해 비밀번호를 입력해주세요.</p>
+                    <div class="info-row">
+                        <span class="info-label">이메일</span>
+                        <input type="email" id="verify-email" placeholder="아이디(이메일)" value="${userInfo.email}">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">비밀번호</span>
+                        <input type="password" id="verify-password" placeholder="비밀번호">
+                    </div>
+                    <p class="error-message" id="verify-error"></p>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button type="button" id="verify-confirm-btn" class="btn-submit" style="flex:1;">확인</button>
+                        <button type="button" id="verify-cancel-btn" class="btn-secondary" style="flex:1; justify-content: center;">취소</button>
+                    </div>
+                </div>`;
+            lucide.createIcons();
+            document.getElementById('verify-confirm-btn').addEventListener('click', handleVerification);
+            document.getElementById('verify-cancel-btn').addEventListener('click', handleCancel);
+        } else if (isEditing) {
+            // 정보 수정 UI
+            infoHeader.innerHTML = `
+                <h2>로그인 정보</h2>
+                <div style="display:flex; gap: 1rem;">
+                    <button id="save-btn" class="btn-text">저장</button>
+                    <button id="cancel-btn" class="btn-text">취소</button>
+                </div>`;
+            infoDisplayArea.innerHTML = `
+                <div class="info-row"><span class="info-label">이름</span><input type="text" id="edit-name" value="${userInfo.name}"></div>
+                <div class="info-row"><span class="info-label">이메일</span><input type="email" id="edit-email" value="${userInfo.email}"></div>
+                <div class="info-row"><span class="info-label">새 비밀번호</span><input type="password" id="edit-new-password" placeholder="8자 이상, 2가지 이상 조합"></div>
+                <div class="info-row"><span class="info-label">비밀번호 확인</span><input type="password" id="edit-confirm-password" placeholder="비밀번호 재입력"></div>
+                <p class="error-message" id="edit-error" style="text-align:right;"></p>
+                <div class="info-row"><span class="info-label">가입일</span><span class="info-value">${userInfo.joinDate}</span></div>`;
+            document.getElementById('save-btn').addEventListener('click', handleSave);
+            document.getElementById('cancel-btn').addEventListener('click', handleCancel);
+        } else {
+            // 기본 정보 표시 UI
+            infoHeader.innerHTML = `<h2>로그인 정보</h2><button id="edit-info-btn" class="btn-text">정보 수정</button>`;
+            infoDisplayArea.innerHTML = `
+                <div class="info-row"><span class="info-label">이름</span><span class="info-value">${userInfo.name}</span></div>
+                <div class="info-row"><span class="info-label">이메일</span><span class="info-value">${userInfo.email}</span></div>
+                <div class="info-row"><span class="info-label">가입일</span><span class="info-value">${userInfo.joinDate}</span></div>`;
+            document.getElementById('edit-info-btn').addEventListener('click', () => { isVerifying = true; renderInfoArea(); });
+        }
+    }
+
+    
+    // --- 이벤트 핸들러 함수들 ---
+    function handleVerification() {
+        const email = document.getElementById('verify-email').value;
+        const password = document.getElementById('verify-password').value;
+        const errorEl = document.getElementById('verify-error');
+        if (email === userInfo.email && password === ADMIN_PASSWORD) {
+            isEditing = true; isVerifying = false; renderInfoArea();
+        } else {
+            errorEl.textContent = '아이디 또는 비밀번호가 일치하지 않습니다.';
+        }
+    }
+    
+    function handleCancel() {
+        isEditing = false; isVerifying = false; renderInfoArea();
+    }
+
+    function handleSave() {
+        const newPassword = document.getElementById('edit-new-password').value;
+        const confirmPassword = document.getElementById('edit-confirm-password').value;
+        const errorEl = document.getElementById('edit-error');
+        errorEl.textContent = '';
+        if (newPassword || confirmPassword) {
+            const userId = userInfo.email.split('@')[0];
+            if (newPassword === ADMIN_PASSWORD) { errorEl.textContent = "기존의 비밀번호로는 변경할 수 없습니다."; return; }
+            if (newPassword.length < 8 || newPassword.length > 20) { errorEl.textContent = "8글자에서 20글자 사이로 입력해주세요."; return; }
+            if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(newPassword)) { errorEl.textContent = "비밀번호에 한글을 사용할 수 없습니다."; return; }
+            if (!/(?=.*[a-zA-Z])(?=.*\d)|(?=.*[a-zA-Z])(?=.*[!@#$%^&*])|(?=.*\d)(?=.*[!@#$%^&*])/.test(newPassword)) { errorEl.textContent = "영어/특수문자/숫자 중 2가지 이상 조합해주세요."; return; }
+            if (/(\w)\1\1/.test(newPassword)) { errorEl.textContent = "같은 문자나 숫자를 3개 이상 연속해서 사용할 수 없습니다."; return; }
+            if (userId && newPassword.includes(userId)) { errorEl.textContent = "아이디(이메일)가 포함된 비밀번호는 사용할 수 없습니다."; return; }
+            if (newPassword !== confirmPassword) { errorEl.textContent = '새 비밀번호가 일치하지 않습니다.'; return; }
+        }
+        alert('정보가 저장되었습니다.');
+        isEditing = false; renderInfoArea();
+    }
+
+    document.getElementById('withdraw-btn').addEventListener('click', () => {
+        if (window.confirm("정말로 탈퇴하시겠습니까? 모든 데이터가 삭제되며 복구할 수 없습니다.")) {
+            alert("탈퇴 처리되었습니다.");
+        }
+    });
+    
+    // --- 초기 렌더링 ---
+    renderInfoArea();
+    renderProfileButtons();
+    const rate = Math.round((calendarCompletion.diariesWritten / calendarCompletion.totalDays) * 100);
+    progressFill.style.width = rate + '%';
+    progressPercent.textContent = rate + '%';
+    progressDetail.textContent = `(${calendarCompletion.diariesWritten} / ${calendarCompletion.totalDays}일 작성)`;
+});
+</script>
+{% endblock %}

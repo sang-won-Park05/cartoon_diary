@@ -1,0 +1,66 @@
+{% extends 'entry/base_auth.html' %}
+
+{% block title %}로그인{% endblock %}
+
+{% block content %}
+<div class="card auth-card">
+    <div class="card-header bg-white text-center border-0 pt-4">
+        <h1 class="h3 font-weight-bold">일기툰</h1>
+    </div>
+    <div class="card-body px-4 pt-0">
+        <ul class="nav nav-tabs nav-fill mb-4">
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'login' %}">로그인</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'signup' %}">회원가입</a>
+            </li>
+        </ul>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form id="login-form" method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="form-group mb-3">
+                <label for="email" class="font-weight-bold">아이디 (이메일)</label>
+                <div class="position-relative">
+                    <input type="email" class="form-control" id="email" name="username" required>
+                    <button type="button" class="btn-clear-input" id="clear-email" style="display:none;">&times;</button>
+                </div>
+                {% if id_error %}
+                    <p class="error-message">{{ id_error }}</p>
+                {% else %}
+                    <p class="error-message"></p> 
+                {% endif %}
+            </div>
+
+            <div class="form-group mb-4">
+                <label for="password" class="font-weight-bold">비밀번호</label>
+                <div class="position-relative">
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <button type="button" class="btn-toggle-password" id="toggle-password" style="display:none;">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+                {% if password_error %}
+                    <p class="error-message">{{ password_error }}</p>
+                {% else %}
+                    <p class="error-message"></p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold">로그인</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+[GLOBAL STYLE]
+A hyperrealistic, cinematic 4-panel comic strip rendered in the style of advanced AI portrait photography.
+Each panel must look like a high-quality, natural photograph — realistic human skin, lifelike eyes, and soft cinematic lighting.
+Characters must remain the SAME person across all four panels — identical face, hairstyle, outfit, and overall appearance.
+Do not introduce new characters or alter facial features, proportions, or clothing between panels.
+Expressions, camera angles, and lighting can vary naturally, but the identity and setting must stay consistent.
+Lighting should be realistic and artistic — warm morning light, soft reflections, or cinematic indoor tones.
+Backgrounds must appear natural and photographic, such as cafes, apartments, or city streets.
+The atmosphere should feel emotional and immersive, as if each frame were a still from a short film.
+Use English text only if needed for narrative clarity (brief caption or subtitle), and keep it minimal and subtle.
+
+[LAYOUT]
+A realistic cinematic comic strip with EXACTLY four panels arranged in a perfect 2x2 grid layout.
+There must be only four panels — two on the top row and two on the bottom row.
+Each panel must be equal in size and shape, separated by clear white gutters with thin black borders.
+Do NOT add any extra panels, frames, film borders, or decorative elements.
+The overall image must clearly display a clean, balanced 2x2 structure — no 3x2, 1x6, 3x3, collage, or storyboard layouts.
+Each panel should represent a single cinematic moment in sequence (Panel 1 → 4) of the same person.
+
+[NEGATIVE PROMPT]
+no anime, no cartoon, no sketch, no illustration, no line art, no stylized drawing,
+no 3x2, no 3x3, no 1x6, no storyboard, no film strip borders, no cinematic bars,
+no collage, no extra panels, no duplicates, no different person per panel,
+no outfit change, no hairstyle change, no age change, no gender change,
+no oversaturated colors, no unrealistic proportions, no painterly rendering,
+no flat lighting, no unrealistic expressions, no Korean text, no non-English text,
+no black bars, no titles, no text outside panels, no page borders or header/footer UI.

@@ -1,130 +1,1399 @@
 {% extends 'entry/base.html' %}
+
 {% load static %}
-{% block content %}
-<div class="container mt-4">
-  <div class="row">
 
-    <!-- 오늘의 일기 (좌측) -->
-    <div class="col-md-5 border p-3">
-      <h5>오늘의 일기</h5>
-      <form id="add-form" method="post" action="">
-        {% csrf_token %}
-        <div class="form-group mb-3">
-          <label class="form-label">제목</label>
-          <input type="text" name="note" class="form-control" placeholder="이 날을 한 줄로" required>
-        </div>
-        <div class="form-group mb-3">
-          <label class="form-label">내용</label>
-          <textarea name="content" rows="10" class="form-control" placeholder="일기를 입력하세요" required></textarea>
-        </div>
-        <div class="form-group mb-3">
-          <label class="form-label">오늘의 생산성</label>
-          <input type="range" name="productivity" min="0" max="10" value="5" step="1" class="form-control">
-        </div>
-        <button type="submit" class="btn btn-primary w-100">저장 & 카드 제작</button>
-      </form>
-    </div>
+{% block title %}일기툰{% endblock %}
 
-    <!-- 진행바 (중앙, 두 박스 사이) -->
-    <div class="col-md-2 d-flex align-items-center justify-content-center">
-      <div id="progress-wrapper" class="w-100" style="display: none;">
-        <div class="text-center mb-2">이미지 생성 중...</div>
-        <div class="progress" style="height: 10px;">
-          <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 오늘의 네컷 미리보기 (우측) -->
-    <div class="col-md-5 border p-3">
-      <h5>오늘의 네컷 미리보기</h5>
-      <div class="border mb-3 d-flex justify-content-center align-items-center" style="height: 400px;">
-        <img id="preview-image" src="" alt="미리보기" style="max-width: 100%; max-height: 100%; display: none;" />
-        <span id="preview-placeholder" class="text-muted">네컷</span>
-      </div>
-      <div class="d-flex justify-content-center">
-        <button type="button" class="btn btn-outline-secondary me-2" id="regenerate-btn" disabled>재생성</button>
-        <a id="detail-link" class="btn btn-outline-secondary disabled" href="#" tabindex="-1" aria-disabled="true">저장 확인</a>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-  // CSRF 토큰 (AJAX 요청용)
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
-  const progressWrapper = document.getElementById('progress-wrapper');
-  const progressBar = document.getElementById('progress-bar');
-  const previewImage = document.getElementById('preview-image');
-  const previewPlaceholder = document.getElementById('preview-placeholder');
-  const regenerateBtn = document.getElementById('regenerate-btn');
-  const detailLink = document.getElementById('detail-link');
-
-  // 서버에서 새로 저장된 ID가 내려오면 즉시 이미지 생성 시작
-  const NEW_DIARY_ID = {{ new_diary_id|default:'null' }};
-
-  function animateProgressTo(target) {
-    const current = parseInt(progressBar.style.width || '0');
-    const step = (target - current) / 30; // 부드럽게 30스텝
-    let i = 0;
-    const timer = setInterval(() => {
-      i += 1;
-      const next = Math.min(target, Math.round(current + step * i));
-      progressBar.style.width = next + '%';
-      if (next >= target || i >= 30) clearInterval(timer);
-    }, 50);
-  }
-
-  async function startGeneration(id) {
-    progressWrapper.style.display = 'block';
-    progressBar.style.width = '0%';
-    progressBar.classList.add('progress-bar-animated');
-    animateProgressTo(90); // 서버 대기 중 90%까지 애니메이션
-
-    try {
-      const resp = await fetch(`{% url 'generate_image' 0 %}`.replace('/0/', `/${id}/`), {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
-      });
-      const data = await resp.json();
-      if (data.status === 'ok' && data.image_url) {
-        progressBar.classList.remove('progress-bar-animated');
-        animateProgressTo(100);
-        previewPlaceholder.style.display = 'none';
-        previewImage.src = data.image_url;
-        previewImage.style.display = 'block';
-        regenerateBtn.disabled = false;
-        // 상세보기 링크 활성화
-        detailLink.classList.remove('disabled');
-        detailLink.removeAttribute('tabindex');
-        detailLink.removeAttribute('aria-disabled');
-        detailLink.href = `{% url 'detail' 0 %}`.replace('/0', `/${id}`);
-      } else {
-        throw new Error(data.message || '이미지 생성 실패');
-      }
-    } catch (e) {
-      console.error(e);
-      progressWrapper.style.display = 'none';
-      alert('이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-    }
-  }
-
-  if (NEW_DIARY_ID) {
-    // 페이지가 POST 후 렌더된 경우 자동 실행
-    startGeneration(NEW_DIARY_ID);
-  }
-
-  // 재생성 버튼: 같은 일기 id로 다시 호출
-  regenerateBtn && regenerateBtn.addEventListener('click', () => {
-    if (!NEW_DIARY_ID) return;
-    startGeneration(NEW_DIARY_ID);
-  });
-</script>
+{% block navbar %}
+<!-- 기존 navbar 숨김 -->
 {% endblock %}
 
+{% block header %}
+<!-- 기존 jumbotron(Add Entry) 숨김 -->
+{% endblock %}
+
+{% block content %}
+
+<style>
+    /* === 기본 레이아웃 === */
+    * { box-sizing: border-box; }
+    
+    .main-body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
+    html.dark .main-body { 
+        background-color: #111827;
+    }
+
+    /* === 상단 헤더 === */
+    .top-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        z-index: 100;
+    }
+    html.dark .top-header {
+        background: #1f2937;
+        border-bottom-color: #374151;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+    html.dark .header-title {
+        color: #f9fafb;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    /* === 햄버거 메뉴 버튼 === */
+    .sidebar-toggle-button { 
+        width: 2rem;
+        height: 1.5rem;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 0;
+    }
+    .sidebar-toggle-button span { 
+        display: block;
+        width: 100%;
+        height: 3px;
+        background-color: #1f2937;
+        border-radius: 3px;
+        transition: all 0.3s;
+    }
+    html.dark .sidebar-toggle-button span { 
+        background-color: #d1d5db;
+    }
+    .sidebar-toggle-button.open span:nth-child(1) { 
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    .sidebar-toggle-button.open span:nth-child(2) { 
+        opacity: 0;
+    }
+    .sidebar-toggle-button.open span:nth-child(3) { 
+        transform: rotate(-45deg) translate(7px, -7px);
+    }
+
+    /* === 사이드바 === */
+    .sidebar { 
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 20rem;
+        background: white;
+        box-shadow: -2px 0 20px rgba(0,0,0,0.15);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 200;
+        overflow-y: auto;
+    }
+    html.dark .sidebar { 
+        background-color: #1f2937;
+        color: #d1d5db;
+    }
+    .sidebar.open { 
+        transform: translateX(0);
+    }
+
+    .sidebar-close {
+        align-self: flex-end;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        margin-bottom: 1rem;
+    }
+    html.dark .sidebar-close {
+        color: #d1d5db;
+    }
+
+    .sidebar-profile { 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    html.dark .sidebar-profile {
+        border-bottom-color: #374151;
+    }
+
+    .profile-image { 
+        width: 5rem;
+        height: 5rem;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+    }
+    .profile-image img { 
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-name { 
+        font-weight: 600;
+        font-size: 1.125rem;
+        color: #1f2937;
+    }
+    html.dark .profile-name { 
+        color: #f9fafb;
+    }
+
+    .sidebar-nav { 
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .sidebar-nav a { 
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s;
+        color: #374151;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    html.dark .sidebar-nav a { 
+        color: #d1d5db;
+    }
+    .sidebar-nav a:hover { 
+        background-color: #f3f4f6;
+    }
+    html.dark .sidebar-nav a:hover { 
+        background-color: #374151;
+    }
+
+    .sidebar-calendar { 
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    html.dark .sidebar-calendar { 
+        border-top-color: #374151;
+    }
+
+    .calendar-header { 
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .calendar-header h2 { 
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .calendar-header button { 
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #374151;
+        font-size: 1.2rem;
+        padding: 0.25rem 0.5rem;
+    }
+    html.dark .calendar-header button { 
+        color: #d1d5db;
+    }
+
+    .calendar-grid { 
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.25rem;
+    }
+    .calendar-grid div { 
+        text-align: center;
+        padding: 0.5rem 0.25rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.875rem;
+    }
+    .calendar-grid div:hover { 
+        background-color: #f0f9ff;
+    }
+    html.dark .calendar-grid div:hover { 
+        background-color: #374151;
+    }
+    .calendar-grid div.selected { 
+        background-color: #3b82f6;
+        color: white;
+        font-weight: bold;
+    }
+    .calendar-grid div.has-diary { 
+        background-color: #fecaca;
+        font-weight: 600;
+    }
+    html.dark .calendar-grid div.has-diary { 
+        background-color: #991b1b;
+    }
+
+    .logout-button { 
+        margin-top: auto;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background: #fee2e2;
+        border: none;
+        color: #dc2626;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: background-color 0.2s;
+    }
+    .logout-button:hover { 
+        background-color: #fecaca;
+    }
+
+    /* === 메인 컨텐츠 === */
+    .main-content { 
+        margin-top: 60px;
+        padding: 2rem;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .content-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr 320px; /* left: form, middle: preview, right: ui-only cards */
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* === 왼쪽 패널 (일기 입력) === */
+    .diary-input-panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        min-height: 700px;
+    }
+    html.dark .diary-input-panel {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .date-display { 
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #1f2937;
+        position: relative;
+    }
+    html.dark .date-display { 
+        color: #f9fafb;
+    }
+
+    .calendar-toggle-btn { 
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0.25rem;
+    }
+
+    .calendar-modal { 
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        padding: 1rem;
+        z-index: 50;
+        margin-top: 0.5rem;
+        min-width: 280px;
+    }
+    html.dark .calendar-modal { 
+        background-color: #374151;
+    }
+    .calendar-modal.open { 
+        display: block;
+    }
+
+    .calendar-modal-grid { 
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.25rem;
+    }
+    .calendar-modal-grid div { 
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #1f2937;
+    }
+    html.dark .section-title {
+        color: #f9fafb;
+    }
+
+    .form-group { 
+        margin-bottom: 1.5rem;
+    }
+    .form-label { 
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #374151;
+    }
+    html.dark .form-label {
+        color: #d1d5db;
+    }
+    .form-control { 
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    html.dark .form-control {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 200px;
+        font-family: inherit;
+    }
+
+    /* === 테마 버튼 그룹 === */
+    .theme-btn-group { 
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .theme-btn { 
+        flex: 1;
+        padding: 0.625rem 0;
+        border-radius: 0.375rem;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+    .theme-btn:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    .theme-btn.active { 
+        background: #3b82f6;
+        color: #fff;
+        border-color: #3b82f6;
+    }
+    html.dark .theme-btn { 
+        background: #374151;
+        color: #d1d5db;
+        border-color: #4b5563;
+    }
+    html.dark .theme-btn.active { 
+        background: #2563eb;
+        color: #fff;
+        border-color: #2563eb;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 0.875rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 1rem;
+    }
+    .btn-primary:hover {
+        background: #2563eb;
+    }
+
+    /* === 오른쪽 패널 (이미지 미리보기) === */
+    .preview-panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        position: sticky;
+        top: 80px;
+        min-height: 700px;
+    }
+    html.dark .preview-panel {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .preview-container {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        min-height: 500px;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f9fafb;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    html.dark .preview-container {
+        background-color: #111827;
+        border-color: #4b5563;
+    }
+
+    #preview-image {
+        max-width: 100%;
+        max-height: 500px;
+        display: none;
+        border-radius: 0.375rem;
+    }
+
+    #preview-placeholder {
+        color: #9ca3af;
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+    html.dark #preview-placeholder {
+        color: #6b7280;
+    }
+
+    /* === 진행바 === */
+    #progress-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        display: none;
+        text-align: center;
+    }
+
+    /* === 우측 UI 카드 컬럼 === */
+    .ui-cards-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .ui-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    html.dark .ui-card {
+        background: #1f2937;
+        border-color: #374151;
+        color: #d1d5db;
+    }
+
+    .ui-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    html.dark .ui-card-header { color: #f9fafb; }
+
+    .ui-badge {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        background: #eef2ff;
+        color: #4f46e5;
+        border-radius: 9999px;
+        border: 1px solid #e0e7ff;
+    }
+    html.dark .ui-badge { background:#312e81; color:#c7d2fe; border-color:#4338ca; }
+
+    .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, auto);
+        gap: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    .chip, .pill-btn {
+        padding: 0.4rem 0.7rem;
+        border-radius: 9999px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        color: #374151;
+        font-size: 0.85rem;
+        cursor: default;
+        user-select: none;
+    }
+    .chip:disabled, .pill-btn:disabled { opacity: 0.7; }
+    html.dark .chip, html.dark .pill-btn { background:#374151; border-color:#4b5563; color:#d1d5db; }
+
+    .preset-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .checkbox-list { display: grid; gap: 0.5rem; }
+    .checkbox-item { display: flex; align-items: center; gap: 0.5rem; color:#374151; }
+    html.dark .checkbox-item { color:#d1d5db; }
+
+    .see-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        color: #6b7280;
+        font-weight: 600;
+    }
+    html.dark .see-btn { background:#374151; border-color:#4b5563; color:#9ca3af; }
+
+    /* === 테마 스위처 (헤더 우측) === */
+    .theme-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .theme-chip {
+        padding: 0.25rem 0.6rem;
+        border-radius: 9999px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        color: #374151;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+    .theme-chip.active { background:#111827; color:#fff; border-color:#111827; }
+    html.dark .theme-chip { background:#374151; border-color:#4b5563; color:#d1d5db; }
+
+    /* === 기본(클래식) 테마: 은은한 노란색 톤 === */
+    html.classic .main-body { background-color: #fef3c7; }
+    html.classic .diary-input-panel,
+    html.classic .preview-panel,
+    html.classic .ui-card { background-color: #fff8db; border-color:#facc15; }
+    html.classic .form-control { background:#fff1b8; border-color:#facc15; }
+    html.classic .form-control:focus { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25); border-color:#f59e0b; }
+    html.classic .theme-btn.active { background:#f59e0b; border-color:#f59e0b; }
+    html.classic #preview-placeholder { color:#a16207; }
+    html.classic .btn-primary { background:#f59e0b; }
+    html.classic .btn-primary:hover { background:#d97706; }
+    html.classic #regenerate-btn { background:#fff; border-color:#facc15; }
+    html.classic #save-btn { background:#f59e0b; }
+
+    .progress {
+        height: 8px;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: #3b82f6;
+        transition: width 0.3s ease;
+    }
+
+    .progress-bar-animated {
+        animation: progress-animation 1s ease-in-out infinite;
+    }
+
+    @keyframes progress-animation {
+        0% { background-position: 0 0; }
+        100% { background-position: 40px 40px; }
+    }
+
+    .progress-bar-striped {
+        background-image: linear-gradient(
+            45deg,
+            rgba(255,255,255,.15) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255,255,255,.15) 50%,
+            rgba(255,255,255,.15) 75%,
+            transparent 75%,
+            transparent
+        );
+        background-size: 40px 40px;
+    }
+
+    /* === 액션 버튼 그룹 === */
+    .action-btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .action-btn {
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        font-size: 0.875rem;
+    }
+
+    #regenerate-btn {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    #regenerate-btn:hover:not(:disabled) {
+        background: #e5e7eb;
+    }
+    #regenerate-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #save-btn {
+        background: #10b981;
+        color: white;
+    }
+    #save-btn:hover:not(:disabled) {
+        background: #059669;
+    }
+    #save-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    #save-btn.btn-secondary {
+        background: #6b7280;
+    }
+
+    #detail-link {
+        grid-column: 1 / -1;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        background: white;
+        color: #3b82f6;
+        border: 1px solid #3b82f6;
+        transition: all 0.2s;
+        display: block;
+    }
+    #detail-link:hover:not(.disabled) {
+        background: #3b82f6;
+        color: white;
+    }
+    #detail-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* === 반응형 === */
+    @media (max-width: 992px) {
+        .content-wrapper {
+            grid-template-columns: 1fr;
+        }
+        
+        .preview-panel {
+            position: static;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 1rem;
+        }
+        
+        .diary-input-panel,
+        .preview-panel {
+            padding: 1.5rem;
+        }
+        
+        .sidebar {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="main-body">
+    <!-- 상단 헤더 -->
+    <header class="top-header">
+        <h1 class="header-title">일기툰</h1>
+        <div class="header-right">
+            <!-- 테마 스위처: 라이트 / 다크 / 기본(노란색) -->
+            <div class="theme-switch" id="theme-switch">
+                <button type="button" class="theme-chip" data-theme="light">라이트</button>
+                <button type="button" class="theme-chip" data-theme="dark">다크</button>
+                <button type="button" class="theme-chip" data-theme="classic">기본</button>
+            </div>
+            <button id="sidebar-toggle" class="sidebar-toggle-button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 사이드바 -->
+    <aside id="sidebar" class="sidebar">
+        <button class="sidebar-close" id="sidebar-close">&times;</button>
+        
+        {% comment %} <div class="sidebar-profile">
+            <div class="profile-image">
+                <img src="https://via.placeholder.com/80" alt="프로필">
+            </div>
+            <span class="profile-name">{{ user.username }}님</span>
+        </div>
+         {% endcomment %}
+        <nav class="sidebar-nav">
+            <a href="{% url 'profile' %}">내 정보</a>
+            <a href="{% url 'settings' %}">환경설정</a>
+        </nav>
+        
+        <div class="sidebar-calendar">
+            <div class="calendar-header">
+                <button id="prev-month-sidebar">&lt;</button>
+                <h2 id="calendar-title-sidebar"></h2>
+                <button id="next-month-sidebar">&gt;</button>
+            </div>
+            <div class="calendar-grid" style="color: #9ca3af; font-weight: 600;">
+                <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+            </div>
+            <div id="calendar-grid-sidebar" class="calendar-grid"></div>
+        </div>
+        
+        <form id="logout-form" action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">
+                <i data-lucide="log-out"></i>
+                <span>로그아웃</span>
+            </button>
+        </form>
+    </aside>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            <!-- 왼쪽: 일기 입력 -->
+            <div class="diary-input-panel">
+                <div class="date-display">
+                    <span id="date-display-text"></span>
+                    <button type="button" id="calendar-toggle-main" class="calendar-toggle-btn">
+                        <i data-lucide="calendar"></i>
+                    </button>
+                    <div id="calendar-modal-main" class="calendar-modal">
+                        <div class="calendar-header">
+                            <button id="prev-month-main">&lt;</button>
+                            <h2 id="calendar-title-main"></h2>
+                            <button id="next-month-main">&gt;</button>
+                        </div>
+                        <div class="calendar-modal-grid" style="color: #9ca3af; font-weight: 600;">
+                            <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                        </div>
+                        <div id="calendar-grid-main" class="calendar-modal-grid"></div>
+                    </div>
+                </div>
+
+                <h2 class="section-title">일기 입력</h2>
+
+                <form id="add-form" method="post" action="">
+                    {% csrf_token %}
+                        <input type="hidden" name="selected_date" id="selected_date" value="">
+
+                    <div class="form-group">
+                        <label class="form-label">제목</label>
+                        <input type="text" name="note" class="form-control" placeholder="이 날을 한 줄로" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">내용</label>
+                        <textarea name="content" id="diary-content" class="form-control" placeholder="일기를 입력하세요" required></textarea>
+                    </div>
+
+                    <div class="form-group" style="display: none;">
+                        <label class="form-label">오늘의 생산성</label>
+                        <input type="range" name="productivity" min="0" max="10" value="5" step="1" class="form-control">
+                    </div>
+
+                    <div class="theme-btn-group" id="theme-selector">
+                        <button type="button" class="theme-btn active" data-theme="Theme1">심플</button>
+                        <button type="button" class="theme-btn" data-theme="Theme2">애니</button>
+                        <button type="button" class="theme-btn" data-theme="Theme3">AI</button>
+                        <input type="hidden" name="theme" id="selected-theme" value="Theme1">
+                    </div>
+
+                    <button type="submit" class="btn-primary">네컷 일기 생성</button>
+                </form>
+            </div>
+
+            <!-- 오른쪽: 이미지 미리보기 -->
+            <div class="preview-panel">
+                <h2 class="section-title">네컷 일기 이미지</h2>
+                
+                <div class="preview-container">
+                    <img id="preview-image" src="" alt="미리보기" />
+                    <span id="preview-placeholder">일기툰</span>
+                    
+                    <div id="progress-wrapper">
+                        <div style="margin-bottom: 0.5rem; color: #6b7280; font-weight: 500;">이미지 생성 중...</div>
+                        <div class="progress">
+                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-btn-group">
+                    <button type="button" class="action-btn" id="regenerate-btn" disabled>재생성</button>
+                    <button type="button" class="action-btn" id="save-btn" disabled>저장</button>
+                    <a id="detail-link" class="disabled" href="#" tabindex="-1" aria-disabled="true">저장 확인</a>
+                </div>
+            </div>
+
+            <!-- 가장 오른쪽: 미구현 기능 UI 카드 -->
+            <aside class="ui-cards-column" aria-label="UI-only options">
+                <!-- 스타일 프리셋 -->
+                <section class="ui-card">
+                    <div class="ui-card-header">
+                        <span>스타일 프리셋</span>
+                        <span class="ui-badge">UI만</span>
+                    </div>
+                    <div class="preset-grid">
+                        <button class="pill-btn" type="button" disabled>하찮은</button>
+                        <button class="pill-btn" type="button" disabled>웹툰풍</button>
+                        <button class="pill-btn" type="button" disabled>수채화</button>
+                        <button class="pill-btn" type="button" disabled>연필스케치</button>
+                    </div>
+                </section>
+
+                <!-- 캐릭터 테마 -->
+                <section class="ui-card">
+                    <div class="ui-card-header">
+                        <span>캐릭터 테마</span>
+                        <span class="ui-badge">토끼/곰/악어</span>
+                    </div>
+                    <div class="preset-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <button class="pill-btn" type="button" disabled>토끼</button>
+                        <button class="pill-btn" type="button" disabled>곰</button>
+                        <button class="pill-btn" type="button" disabled>악어</button>
+                    </div>
+                </section>
+
+                <!-- 고급 설정 -->
+                <section class="ui-card">
+                    <div class="ui-card-header">
+                        <span>고급 설정</span>
+                        <span class="ui-badge">비활성</span>
+                    </div>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item"><input type="checkbox" disabled> 컷별 감정 강조</label>
+                        <label class="checkbox-item"><input type="checkbox" disabled> 자막 자동 생성</label>
+                        <label class="checkbox-item"><input type="checkbox" disabled> 색상 톤 강화</label>
+                    </div>
+                </section>
+
+                <!-- 최근 2x2 이미지 보기 -->
+                <section class="ui-card">
+                    <div class="ui-card-header">
+                        <span>최근 2x2 이미지 보기</span>
+                    </div>
+                    <button class="see-btn" type="button" disabled>보기</button>
+                </section>
+            </aside>
+        </div>
+    </main>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- 상태 관리 ---
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let diaryDates = [];
+
+        // --- 요소 찾기 ---
+        const dateDisplayText = document.getElementById('date-display-text');
+        const calendarToggleMain = document.getElementById('calendar-toggle-main');
+        const calendarModalMain = document.getElementById('calendar-modal-main');
+        const themeSwitchEl = document.getElementById('theme-switch');
+
+        // --- 이탈 방지 기능 ---
+        const diaryContentEl = document.getElementById('diary-content');
+        const logoutForm = document.getElementById('logout-form');
+        const sidebarNavLinks = document.querySelectorAll('.sidebar-nav a');
+        
+        let hasUnsavedChanges = false;
+        
+        diaryContentEl.addEventListener('input', () => {
+            hasUnsavedChanges = true;
+        });
+
+        window.addEventListener('beforeunload', (event) => {
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = '저장하지 않은 변경사항이 있습니다. 정말 떠나시겠습니까?';
+            }
+        });
+
+        sidebarNavLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                if (hasUnsavedChanges) {
+                    if (!confirm('저장하지 않고 페이지를 떠나시겠습니까?')) {
+                        event.preventDefault(); 
+                    }
+                }
+            });
+        });
+
+        logoutForm.addEventListener('submit', (event) => {
+            if (hasUnsavedChanges) {
+                if (!confirm('저장하지 않고 로그아웃 하시겠습니까?')) {
+                    event.preventDefault();
+                }
+            }
+        });
+
+        // --- 함수 정의 ---
+        function getCookie(name) { 
+            const value = `; ${document.cookie}`; 
+            const parts = value.split(`; ${name}=`); 
+            if (parts.length === 2) return parts.pop().split(';').shift(); 
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // === 서버에서 일기 날짜 목록 가져오기 ===
+        async function loadDiaryDates() {
+            try {
+                const response = await fetch('/api/diary/dates/', {
+                    method: 'GET',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    diaryDates = data.dates;
+                    renderCalendar('sidebar', currentDate.getFullYear(), currentDate.getMonth());
+                    renderCalendar('main', currentDate.getFullYear(), currentDate.getMonth());
+                }
+            } catch (error) {
+                console.error('일기 날짜 목록 로드 실패:', error);
+            }
+        }
+
+        // === 특정 날짜의 일기 불러오기 ===
+        async function loadDiaryByDate(dateString) {
+            try {
+                const response = await fetch(`/api/diary/${dateString}/`, {
+                    method: 'GET',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    const diary = data.data;
+                    
+                    // 폼에 일기 데이터 채우기
+                    document.querySelector('input[name="note"]').value = diary.note || '';
+                    document.querySelector('textarea[name="content"]').value = diary.content || '';
+                    document.querySelector('input[name="productivity"]').value = diary.productivity || 5;
+                    
+                    // ✅ S3에 저장된 image_url만 사용
+                    if (diary.image_url) {
+                        previewImage.src = diary.image_url;
+                        previewImage.style.display = 'block';
+                        previewPlaceholder.style.display = 'none';
+                        
+                        // 상세보기 링크 활성화
+                        detailLink.classList.remove('disabled');
+                        detailLink.removeAttribute('tabindex');
+                        detailLink.removeAttribute('aria-disabled');
+                        detailLink.href = `{% url 'detail' 0 %}`.replace('/0', `/${diary.id}`);
+                        
+                        // 이미 저장된 이미지이므로 저장 버튼 비활성화
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = '저장 완료';
+                        saveBtn.classList.add('btn-secondary');
+                        
+                        // 재생성 버튼 활성화
+                        regenerateBtn.disabled = false;
+                    } else {
+                        // 이미지 없으면 플레이스홀더
+                        clearPreview();
+                    }
+                    
+                    // 버튼 텍스트 변경
+                    document.querySelector('button[type="submit"]').textContent = '수정 & 카드 재제작';
+                    
+                } else if (data.status === 'empty') {
+                    // 일기가 없으면 폼 초기화
+                    clearForm();
+                }
+            } catch (error) {
+                console.error('일기 로드 실패:', error);
+            }
+        }
+
+        // === 폼 초기화 ===
+        function clearForm() {
+            document.querySelector('input[name="note"]').value = '';
+            document.querySelector('textarea[name="content"]').value = '';
+            document.querySelector('input[name="productivity"]').value = 5;
+            clearPreview();
+            document.querySelector('button[type="submit"]').textContent = '네컷 일기 생성';
+        }
+
+        // === 미리보기 초기화 ===
+        function clearPreview() {
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+            previewImage.src = '';
+            
+            detailLink.classList.add('disabled');
+            detailLink.setAttribute('tabindex', '-1');
+            detailLink.setAttribute('aria-disabled', 'true');
+            detailLink.href = '#';
+            
+            saveBtn.disabled = true;
+            saveBtn.textContent = '저장';
+            saveBtn.classList.remove('btn-secondary');
+        }
+
+        function updateAllDisplays(newDate) {
+            selectedDate = newDate;
+            dateDisplayText.textContent = formatDate(selectedDate);
+            renderCalendar('sidebar', currentDate.getFullYear(), currentDate.getMonth());
+            renderCalendar('main', currentDate.getFullYear(), currentDate.getMonth());
+        }
+
+        function renderCalendar(type, year, month) {
+            const titleEl = document.getElementById(`calendar-title-${type}`);
+            const gridEl = document.getElementById(`calendar-grid-${type}`);
+            titleEl.textContent = `${year}년 ${month + 1}월`;
+            gridEl.innerHTML = '';
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            for (let i = 0; i < firstDay; i++) { 
+                gridEl.appendChild(document.createElement('div')); 
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.textContent = day;
+                const thisDate = new Date(year, month, day);
+                const thisDateString = formatDate(thisDate);
+                
+                if (diaryDates.includes(thisDateString)) { 
+                    dayEl.classList.add('has-diary'); 
+                }
+                if (formatDate(selectedDate) === thisDateString) { 
+                    dayEl.classList.add('selected'); 
+                }
+                
+                // ✅ 날짜 클릭 시 → detail 페이지로 이동
+                dayEl.addEventListener('click', async () => {
+                    selectedDate = thisDate;
+                    renderCalendar('sidebar', currentDate.getFullYear(), currentDate.getMonth());
+                    renderCalendar('main', currentDate.getFullYear(), currentDate.getMonth());
+                    
+                    // API로 해당 날짜의 일기 확인
+                    try {
+                        const response = await fetch(`/api/diary/${thisDateString}/`, {
+                            method: 'GET',
+                            headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+                        });
+                        const data = await response.json();
+                        
+                        if (data.status === 'ok' && data.data) {
+                            // 일기가 있으면 detail 페이지로 이동
+                            window.location.href = `/detail/${thisDateString}/`;
+                        } else {
+                            // 일기가 없으면 현재 페이지에서 새로 작성
+                            dateDisplayText.textContent = thisDateString;
+                            document.getElementById('selected_date').value = thisDateString;
+                            clearForm();
+                        }
+                    } catch (error) {
+                        console.error('일기 조회 오류:', error);
+                        dateDisplayText.textContent = thisDateString;
+                        document.getElementById('selected_date').value = thisDateString;
+                        clearForm();
+                    }
+                    
+                    if (type === 'main') calendarModalMain.classList.remove('open');
+                });
+                
+                gridEl.appendChild(dayEl);
+            }
+        }
+        
+        // --- Main 기능: 이미지 생성 및 S3 저장 JavaScript ---
+        const progressWrapper = document.getElementById('progress-wrapper'); 
+        const progressBar = document.getElementById('progress-bar'); 
+        const previewImage = document.getElementById('preview-image'); 
+        const previewPlaceholder = document.getElementById('preview-placeholder'); 
+        const regenerateBtn = document.getElementById('regenerate-btn'); 
+        const saveBtn = document.getElementById('save-btn');
+        const detailLink = document.getElementById('detail-link'); 
+        const NEW_DIARY_ID = {{ new_diary_id|default:'null' }};
+        
+        function animateProgressTo(target) { 
+            const current = parseInt(progressBar.style.width || '0');
+            const step = (target - current) / 30;
+            let i = 0;
+            const timer = setInterval(() => {
+                i += 1;
+                const next = Math.min(target, Math.round(current + step * i));
+                progressBar.style.width = next + '%';
+                if (next >= target || i >= 30) clearInterval(timer);
+            }, 50);
+        }
+        
+        async function startGeneration(id) { 
+            progressWrapper.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.classList.add('progress-bar-animated');
+            animateProgressTo(90);
+            
+            try {
+                const resp = await fetch(`{% url 'generate_image' 0 %}`.replace('/0/', `/${id}/`), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+                });
+                const data = await resp.json();
+                if (data.status === 'ok' && data.temp_image_url) {
+                    progressBar.classList.remove('progress-bar-animated');
+                    animateProgressTo(100);
+                
+                    previewImage.src = data.temp_image_url;
+                    previewImage.style.display = 'block';
+                    regenerateBtn.disabled = false;
+                    saveBtn.disabled = false;
+                    
+                    // 진행바 숨기기
+                    setTimeout(() => {
+                        progressWrapper.style.display = 'none';
+                    }, 500);
+                } else {
+                    throw new Error(data.message || '이미지 생성 실패');
+                }
+            } catch (e) {
+                console.error(e);
+                progressWrapper.style.display = 'none';
+                alert('이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        }
+        
+        if (NEW_DIARY_ID) {
+            startGeneration(NEW_DIARY_ID);
+        }
+        
+        regenerateBtn && regenerateBtn.addEventListener('click', () => {
+            if (NEW_DIARY_ID) startGeneration(NEW_DIARY_ID);
+        });
+        
+        // S3 저장 버튼
+        saveBtn && saveBtn.addEventListener('click', async () => {
+            if (!NEW_DIARY_ID) return;
+            
+            saveBtn.disabled = true;
+            saveBtn.textContent = '저장 중...';
+        
+            try {
+                const resp = await fetch(`{% url 'save_image' 0 %}`.replace('/0/', `/${NEW_DIARY_ID}/`), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+                });
+                const data = await resp.json();
+                
+                if (data.status === 'ok' && data.image_url) {
+                    saveBtn.textContent = '저장 완료!';
+                    saveBtn.classList.add('btn-secondary');
+                    
+                    detailLink.classList.remove('disabled');
+                    detailLink.removeAttribute('tabindex');
+                    detailLink.removeAttribute('aria-disabled');
+                    detailLink.href = `/detail/${formatDate(selectedDate)}/`;
+                    
+                    alert('일기가 저장되었습니다!');
+                    
+                    // 일기 날짜 목록 새로고침
+                    await loadDiaryDates();
+                } else {
+                    throw new Error(data.message || 'S3 저장 실패');
+                }
+            } catch (e) {
+                console.error(e);
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+                alert('S3 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+            }
+        });
+
+        // --- UI 이벤트 리스너 ---
+        const sidebar = document.getElementById('sidebar'); 
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+        
+        sidebarToggle.addEventListener('click', () => { 
+            sidebar.classList.add('open'); 
+            sidebarToggle.classList.add('open'); 
+        });
+        
+        sidebarClose.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarToggle.classList.remove('open');
+        });
+        
+        calendarToggleMain.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            calendarModalMain.classList.toggle('open'); 
+        });
+        
+        document.body.addEventListener('click', () => { 
+            calendarModalMain.classList.remove('open'); 
+        });
+        
+        calendarModalMain.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+        });
+        
+        ['sidebar', 'main'].forEach(type => {
+            document.getElementById(`prev-month-${type}`).addEventListener('click', () => { 
+                currentDate.setMonth(currentDate.getMonth() - 1); 
+                renderCalendar('sidebar', currentDate.getFullYear(), currentDate.getMonth()); 
+                renderCalendar('main', currentDate.getFullYear(), currentDate.getMonth()); 
+            });
+            document.getElementById(`next-month-${type}`).addEventListener('click', () => { 
+                currentDate.setMonth(currentDate.getMonth() + 1); 
+                renderCalendar('sidebar', currentDate.getFullYear(), currentDate.getMonth()); 
+                renderCalendar('main', currentDate.getFullYear(), currentDate.getMonth()); 
+            });
+        });
+        
+        // 폼 제출 시 유효성 검사
+        const addForm = document.getElementById('add-form');
+        addForm.addEventListener('submit', function(event) {
+            const content = document.getElementById('diary-content').value;
+            if (content.trim().length < 20) {
+                event.preventDefault();
+                alert("일기 내용은 최소 20자 이상 작성해주세요.");
+                return;
+            }
+            hasUnsavedChanges = false;
+        });
+
+        // 테마 버튼 선택
+        const themeBtns = document.querySelectorAll('.theme-btn');
+        const selectedThemeInput = document.getElementById('selected-theme');
+        themeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                themeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedThemeInput.value = btn.dataset.theme;
+            });
+        });
+
+        // === 테마 스위처 ===
+        function applyTheme(theme) {
+            // reset
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.remove('classic');
+            if (theme === 'dark') document.documentElement.classList.add('dark');
+            if (theme === 'classic') document.documentElement.classList.add('classic');
+
+            // update chips
+            if (themeSwitchEl) {
+                const chips = themeSwitchEl.querySelectorAll('.theme-chip');
+                chips.forEach(c => c.classList.toggle('active', c.dataset.theme === theme));
+            }
+        }
+
+        // init current theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+
+        // bind switch events
+        if (themeSwitchEl) {
+            themeSwitchEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.theme-chip');
+                if (!btn) return;
+                const t = btn.dataset.theme;
+                localStorage.setItem('theme', t);
+                applyTheme(t);
+            });
+        }
+
+        // === 초기화 ===
+        loadDiaryDates(); // 일기 날짜 목록 로드
+        dateDisplayText.textContent = formatDate(selectedDate);
+        document.getElementById('selected_date').value = formatDate(selectedDate);
+        lucide.createIcons();
+    });
+</script>
+
+{% endblock %}

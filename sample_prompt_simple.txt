@@ -1,0 +1,26 @@
+[GLOBAL STYLE]
+A monochrome, intentionally poorly-drawn comic strip in the style of a cheap newspaper doodle.
+Drawings must look clumsy, funny, and naive, with uneven black ink lines and very simple shapes.
+No color — only black lines on a pure white background.
+No shading, no gradients, no textures, and no digital effects of any kind.
+The line quality should remain consistently rough across all panels.
+Characters must appear to be the SAME person throughout all four panels — same face, hairstyle, outfit, and proportions.
+Expressions and poses can vary, but the identity and outfit must remain identical.
+The overall tone is lighthearted, simple, and comedic.
+Short English captions or sound effects may appear, drawn by hand in a rough doodle style.
+Do NOT include any Korean, symbols, or printed fonts — English text only.
+
+[LAYOUT]
+A comic strip with EXACTLY four panels arranged in a perfect 2x2 grid.
+ONLY four panels: two on the top row and two on the bottom row.
+Each panel must be equal in size, separated by clean white gutters, and outlined by thin black borders.
+The overall image must visually show a clean 2x2 structure — no extra rows, no extra columns, no film bars, no collage, no storyboard.
+Each panel represents a simple sequential moment (Panel 1 → 4) featuring the same character.
+
+[NEGATIVE PROMPT]
+no color, no realistic rendering, no digital painting, no photo style,
+no shading, no gradient, no detailed background, no high detail,
+no 6-panel, no 5-panel, no 3x3 layout, no 3x2 layout, no 1x6 layout, no storyboard, no collage,
+no new characters, no different person in each panel, no outfit change, no hair color change,
+no Korean text, no non-English text, no printed fonts, no 3D render, no title, no subtitles,
+no inconsistent props, no multiple main characters, no realistic face rendering.

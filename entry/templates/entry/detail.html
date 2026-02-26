@@ -1,16 +1,465 @@
 {% extends 'entry/base.html' %}
 {% load static %}
+
+{% block title %}{{ date }} 일기{% endblock %}
+
+{% block navbar %}
+<!-- navbar 숨김 -->
+{% endblock %}
+
+{% block header %}
+<!-- header 숨김 -->
+{% endblock %}
+
 {% block content %}
-    <div class="container">
-        {% if diary.image_url %}
-            <div class="mb-3">
-                <img src="{{ diary.image_url }}" alt="Diary Image" class="img-fluid" />
-            </div>
-        {% endif %}
-        {% autoescape off %}
-            {{ diary.content }}
-        {% endautoescape %}
+
+<style>
+    /* === 기본 레이아웃 === */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+    }
+    html.dark body { 
+        background-color: #111827;
+    }
+
+    /* === 상단 헤더 === */
+    .top-header {
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+    }
+    html.dark .top-header {
+        background: #1f2937;
+        border-bottom-color: #374151;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+    html.dark .header-title {
+        color: #f9fafb;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        transition: color 0.2s;
+    }
+    .close-btn:hover {
+        color: #1f2937;
+    }
+    html.dark .close-btn:hover {
+        color: #f9fafb;
+    }
+
+    /* === 메인 컨텐츠 === */
+    .main-content { 
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem 2rem;
+    }
+
+    .date-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+    }
+    html.dark .date-header {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .date-text {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    html.dark .date-text {
+        color: #f9fafb;
+    }
+
+    .content-wrapper {
+        display: grid;
+        grid-template-columns: 380px 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* === 왼쪽: 해당 날짜 일기 리스트 === */
+    .diary-list-panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    html.dark .diary-list-panel {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .panel-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #1f2937;
+    }
+    html.dark .panel-title {
+        color: #f9fafb;
+    }
+
+    .diary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .diary-item {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+    .diary-item:hover {
+        border-color: #3b82f6;
+        background: #f9fafb;
+    }
+    .diary-item.active {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    html.dark .diary-item {
+        background: #374151;
+        border-color: #4b5563;
+    }
+    html.dark .diary-item:hover {
+        background: #4b5563;
+        border-color: #3b82f6;
+    }
+    html.dark .diary-item.active {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+    }
+
+    .diary-item-title {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+    html.dark .diary-item-title {
+        color: #f9fafb;
+    }
+
+    .diary-item-time {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    html.dark .diary-item-time {
+        color: #9ca3af;
+    }
+
+    .diary-item-preview {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    html.dark .diary-item-preview {
+        color: #9ca3af;
+    }
+
+    /* === 중앙: 네컷 일기 이미지 === */
+    .image-panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+    }
+    html.dark .image-panel {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .image-panel .panel-title {
+        text-align: center;
+        font-size: 1.125rem;
+    }
+
+    .image-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+    }
+
+    .diary-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-image {
+        color: #9ca3af;
+        text-align: center;
+    }
+
+    /* === 오른쪽: 일기 본문 === */
+    .content-panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    html.dark .content-panel {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .content-panel .panel-title {
+        font-size: 1.125rem;
+    }
+
+    .diary-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #1f2937;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 0.75rem;
+    }
+    html.dark .diary-title {
+        color: #f9fafb;
+        border-bottom-color: #374151;
+    }
+
+    .diary-content {
+        font-size: 1rem;
+        line-height: 1.8;
+        color: #374151;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    html.dark .diary-content {
+        color: #d1d5db;
+    }
+
+    /* === 다운로드 버튼 === */
+    .download-section {
+        text-align: center;
+    }
+
+    .download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 2rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
+    .download-btn:hover {
+        background: #2563eb;
+    }
+    .download-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    /* === 반응형 === */
+    @media (max-width: 1200px) {
+        .content-wrapper {
+            grid-template-columns: 1fr;
+        }
+        
+        .diary-list-panel {
+            max-height: none;
+        }
+        
+        .content-panel {
+            max-height: none;
+        }
+    }
+</style>
+
+<!-- 상단 헤더 -->
+<header class="top-header">
+    <h1 class="header-title">일기 상세보기</h1>
+    <button class="close-btn" onclick="location.href='{% url 'entry' %}'">✕</button>
+</header>
+
+<!-- 메인 컨텐츠 -->
+<main class="main-content">
+    <!-- 날짜 헤더 -->
+    <div class="date-header">
+        <div class="date-text">{{ date }} </div>
     </div>
 
+    <!-- 3단 레이아웃 -->
+    <div class="content-wrapper">
+        <!-- 왼쪽: 해당 날짜 일기 리스트 -->
+        <div class="diary-list-panel">
+            <h2 class="panel-title">일기 리스트</h2>
+            <div class="diary-list">
+                {% for diary in diaries %}
+                <div class="diary-item {% if forloop.first %}active{% endif %}" 
+                     data-diary-id="{{ diary.id }}"
+                     onclick="loadDiary({{ diary.id }})">
+                    <div class="diary-item-title">{{ diary.note|default:"제목 없음" }}</div>
+                    <div class="diary-item-time">{{ diary.date_created|date:"H:i:s" }}</div>
+                    <div class="diary-item-preview">{{ diary.content|truncatechars:30 }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 중앙: 네컷 일기 이미지 -->
+        <div class="image-panel">
+            <h2 class="panel-title">네컷 일기</h2>
+            <div class="image-container" id="image-container">
+                {% if selected_diary.image_url %}
+                    <img src="{{ selected_diary.image_url }}" alt="Diary Image" class="diary-image" id="diary-image" />
+                {% else %}
+                    <p class="no-image">이미지가 저장되지 않았습니다.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 오른쪽: 일기 본문 -->
+        <div class="content-panel">
+            <h2 class="panel-title">일기 본문</h2>
+            <div id="diary-detail-content">
+                {% if selected_diary.note %}
+                    <h3 class="diary-title">{{ selected_diary.note }}</h3>
+                {% endif %}
+                <div class="diary-content">{{ selected_diary.content }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 다운로드 버튼 -->
+    <div class="download-section">
+        <button class="download-btn" id="download-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            다운로드
+        </button>
+    </div>
+</main>
+
+<script>
+    let currentDiaryId = {{ selected_diary.id }};
+    
+    // 일기 선택 시 상세 정보 로드
+    async function loadDiary(diaryId) {
+        try {
+            // 활성화 표시 변경
+            document.querySelectorAll('.diary-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-diary-id="${diaryId}"]`).classList.add('active');
+            
+            // 일기 상세 정보 가져오기
+            const response = await fetch(`/api/diary/detail/${diaryId}/`);
+            const data = await response.json();
+            
+            if (data.status === 'ok') {
+                const diary = data.data;
+                currentDiaryId = diary.id;
+                
+                // 이미지 업데이트
+                const imageContainer = document.getElementById('image-container');
+                if (diary.image_url) {
+                    imageContainer.innerHTML = `<img src="${diary.image_url}" alt="Diary Image" class="diary-image" id="diary-image" />`;
+                } else {
+                    imageContainer.innerHTML = `<p class="no-image">이미지가 저장되지 않았습니다.</p>`;
+                }
+                
+                // 본문 업데이트
+                const contentDiv = document.getElementById('diary-detail-content');
+                let html = '';
+                if (diary.note) {
+                    html += `<h3 class="diary-title">${diary.note}</h3>`;
+                }
+                html += `<div class="diary-content">${diary.content.replace(/\n/g, '<br>')}</div>`;
+                contentDiv.innerHTML = html;
+                
+                // 다운로드 버튼 활성화/비활성화
+                const downloadBtn = document.getElementById('download-btn');
+                downloadBtn.disabled = !diary.image_url;
+            }
+        } catch (error) {
+            console.error('일기 로드 실패:', error);
+            alert('일기를 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+    
+    // 다운로드 기능
+    document.addEventListener('DOMContentLoaded', function() {
+        const downloadBtn = document.getElementById('download-btn');
+        
+        downloadBtn.addEventListener('click', async function() {
+            const diaryImage = document.getElementById('diary-image');
+            
+            if (!diaryImage) {
+                alert('다운로드할 이미지가 없습니다.');
+                return;
+            }
+            
+            try {
+                const imageUrl = diaryImage.src;
+                const response = await fetch(imageUrl, { mode: 'cors' });
+                
+                if (!response.ok) throw new Error('이미지를 가져올 수 없습니다.');
+                
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = '네컷일기_{{ date }}_' + currentDiaryId + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                window.URL.revokeObjectURL(blobUrl);
+                alert('이미지가 다운로드되었습니다!');
+            } catch (error) {
+                console.error('다운로드 오류:', error);
+                alert('다운로드 중 오류가 발생했습니다.');
+            }
+        });
+    });
+</script>
 
 {% endblock %}

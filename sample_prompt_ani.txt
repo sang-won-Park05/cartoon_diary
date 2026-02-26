@@ -1,0 +1,26 @@
+[GLOBAL STYLE]
+A colorful, expressive anime-style 4-panel comic strip inspired by modern Japanese animation.
+Each panel must look like a clean digital anime scene — bright colors, sharp outlines, and soft painterly shading.
+The SAME main character must appear consistently in all four panels with the same face, hairstyle, and outfit.
+Do not introduce new characters or change the main character’s appearance between panels.
+Expressions, poses, and camera angles can vary naturally, but the identity and clothing must stay consistent.
+Backgrounds should be soft and atmospheric, showing everyday slice-of-life settings such as homes, schools, parks, or city streets.
+Lighting should be warm and ambient — afternoon sunlight, glowing indoor tones, or pastel evening light.
+The tone should be cheerful, story-driven, and emotionally engaging, like moments from a heartwarming anime episode.
+Minimal English captions may appear for storytelling clarity; keep them subtle and handwritten in style.
+No Korean text or printed fonts of any kind.
+
+[LAYOUT]
+A comic strip with EXACTLY four panels arranged in a perfect 2x2 grid layout.
+Only four panels — two on the top row and two on the bottom row.
+Each panel must be equal in size and shape, clearly separated by white gutters, and outlined by thin black borders.
+The overall image must visibly show a clean 2x2 grid — no extra panels, no rows, no collage, no storyboard layout.
+Each panel should represent a continuous sequence (Panel 1 → 4) featuring the same character.
+
+[NEGATIVE PROMPT]
+no photorealism, no cinematic realism, no sketch lines, no grayscale, no horror,
+no 3x3, no 3x2, no 1x6, no storyboard, no film strip, no collage,
+no subtitles, no black bars, no title bars, no page frames, no extra panels,
+no character drift, no different person per panel, no new characters,
+no outfit change, no hair color change, no age change, no inconsistent props,
+no printed fonts, no Korean text, no non-English text, no 3D render.

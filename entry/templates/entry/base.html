@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Quill stylesheet -->
-    <link href="https://cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    
+    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css?family=Vollkorn&display=swap" rel="stylesheet">
 
     <!-- Bootstrap stylesheet -->
@@ -14,19 +16,74 @@
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
           crossorigin="anonymous">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <title>{% block title %}Add Entry{% endblock %}</title>
+    <title>{% block title %}오늘의 일기{% endblock %}</title>
 
     <style>
-        /* 기존 add.html의 에디터 높이 보장 */
+        body { font-family: 'Vollkorn', serif; }
+        
+        /* Quill 에디터 높이 보장 */
         html body div.container.contact-form form.mt-5 div.ql-container.ql-snow {
             height: 300px;
         }
-        body { font-family: 'Vollkorn', serif; }
+
+        /* 다크 모드 스타일 */
+        html.dark body {
+            background-color: #111827;
+            color: #d1d5db;
+        }
+        html.dark .bg-light {
+            background-color: #1f2937 !important;
+        }
+        html.dark .navbar-brand, html.dark .nav-link {
+            color: #d1d5db !important;
+        }
+        html.dark .jumbotron {
+            background-color: #1f2937;
+        }
+        html.dark .card {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        html.dark .card-title, html.dark .card-subtitle {
+            color: #f9fafb !important;
+        }
+        html.dark .text-muted {
+            color: #9ca3af !important;
+        }
+
+        /* 기본(클래식) 테마 - 은은한 노랑톤 */
+        html.classic body {
+            background-color: #fef3c7;
+            color: #374151;
+        }
+        html.classic .bg-light { background-color: #fff8db !important; }
+        html.classic .jumbotron { background-color: #fff8db; }
+        html.classic .card { background-color: #fff8db; color: #374151; border-color: #facc15; }
+        html.classic .card-title, html.classic .card-subtitle { color: #111827 !important; }
+        html.classic .text-muted { color: #a16207 !important; }
     </style>
+
+    <script>
+        // 페이지 깜빡임 방지 - 다크모드 즉시 적용
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (theme === 'classic') {
+                document.documentElement.classList.add('classic');
+            }
+        })();
+    </script>
+    
 </head>
 <body>
 
+<!-- 기존 네비게이션 바는 block으로 만들어서 필요한 페이지만 사용 -->
+{% block navbar %}
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="{% url 'entry' %}">Diary App</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
@@ -39,21 +96,18 @@
             <li class="nav-item">
                 <a class="nav-link mr-3 {% if add_highlight %}active{% endif %}" href="{% url 'productivity' %}">
                     <hr class="d-xl-none d-lg-none">
-                    <img src="{% static 'icons/chart-line-solid.svg' %}" height="30" width="30" alt="Productivity Chart">
                     <span class="d-xl-none d-lg-none">&nbsp; Productivity Chart</span>
                     <hr class="d-xl-none d-lg-none">
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link mr-3 {% if add_highlight %}active{% endif %}" href="{% url 'entry' %}">
-                    <img src="{% static 'icons/plus-square-solid.svg' %}" height="30" width="30" alt="Add Diaries">
                     <span class="d-xl-none d-lg-none">&nbsp; Add Diaries</span>
                     <hr class="d-xl-none d-lg-none">
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if show_highlight %}active{% endif %}" href="{% url 'show' %}">
-                    <img src="{% static 'icons/book-solid.svg' %}" height="30" width="30" alt="Show Diaries">
                     <span class="d-xl-none d-lg-none">&nbsp; Show Diaries</span>
                     <hr class="d-xl-none d-lg-none">
                 </a>
@@ -61,18 +115,32 @@
         </ul>
     </div>
 </nav>
+{% endblock %}
 
+<!-- Jumbotron도 block으로 만들어서 필요한 페이지만 사용 -->
+{% block header %}
 <div class="jumbotron jumbotron-fluid text-center">
     <div class="container">
         <h1 class="display-4">{{ title }}</h1>
         <p class="lead">{{ subtitle }}</p>
     </div>
 </div>
+{% endblock %}
 
 {% block content %}{% endblock %}
 
+<!-- JavaScript 라이브러리 -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-<a class="fixed-bottom" href="https://github.com/theArjun/diary-app" target="_blank">
-    <button class="btn btn-light rounded text-dark float-right">
-        <img class="mb-1" height="30"
-             src="https://i.pinimg.com/original
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+</body>
+</html>

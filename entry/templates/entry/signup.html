@@ -1,0 +1,61 @@
+{% extends 'entry/base_auth.html' %}
+
+{% block title %}회원가입{% endblock %}
+
+{% block content %}
+<div class="card auth-card">
+    <div class="card-header bg-white text-center border-0 pt-4">
+        <h1 class="h3 font-weight-bold">일기툰</h1>
+    </div>
+    <div class="card-body px-4 pt-0">
+        <ul class="nav nav-tabs nav-fill mb-4">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}">로그인</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'signup' %}">회원가입</a>
+            </li>
+        </ul>
+
+        <form id="signup-form" method="post">
+            {% csrf_token %}
+
+            <div class="form-group mb-3">
+                <label for="signup-email" class="font-weight-bold">아이디 (이메일)</label>
+                <div class="input-group">
+                    <input type="email" class="form-control" id="signup-email" name="email" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="check-email-btn">중복확인</button>
+                    </div>
+                </div>
+                <p class="error-message" id="signup-email-error"></p>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="signup-password" class="font-weight-bold">비밀번호</label>
+                <input type="password" class="form-control" id="signup-password" name="password" required>
+                <div id="password-conditions" class="conditions-box">
+                    <p data-condition="length">✓ 8~20자</p>
+                    <p data-condition="combination">✓ 영문/숫자/특수문자 중 2가지 이상 조합</p>
+                    <p data-condition="noKorean">✓ 한글 사용 불가</p>
+                    <p data-condition="consecutive">✓ 3개 이상 연속/동일한 문자/숫자 제외</p>
+                    <p data-condition="includesEmail">✓ 아이디(이메일) 제외</p>
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <label for="signup-password-confirm" class="font-weight-bold">비밀번호 확인</label>
+                <input type="password" class="form-control" id="signup-password-confirm" name="password_confirm" required>
+                <p class="error-message" id="signup-password-confirm-error"></p>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="signup-nickname" class="font-weight-bold">이름(닉네임)</label>
+                <input type="text" class="form-control" id="signup-nickname" name="nickname" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold">회원가입</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
